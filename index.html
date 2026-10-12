@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Claude Lite</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1c1e21;--muted:#5f6670;--accent:#1a5fd0;--border:#d9dde3}
+@media (prefers-color-scheme:dark){:root{--bg:#14161a;--card:#1d2026;--text:#e8eaed;--muted:#9aa1ab;--accent:#6ea2ff;--border:#333843}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:24px 16px}
+h1{font-size:1.4rem;margin:0 0 4px}
+p.sub{margin:0 0 20px;color:var(--muted)}
+textarea{width:100%;min-height:120px;padding:12px;font:inherit;color:inherit;background:var(--card);border:1px solid var(--border);border-radius:8px;resize:vertical}
+textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button{margin-top:12px;width:100%;padding:12px;font:inherit;font-weight:600;color:#fff;background:var(--accent);border:0;border-radius:8px;cursor:pointer}
+@media (prefers-color-scheme:dark){button{color:#10131a}}
+button:disabled{opacity:.6;cursor:wait}
+#out{margin-top:20px;padding:16px;background:var(--card);border:1px solid var(--border);border-radius:8px;white-space:pre-wrap;overflow-wrap:anywhere}
+#out:empty{display:none}
+#out.error{color:#c62828}
+@media (min-width:480px){button{width:auto;padding:12px 28px}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Claude Lite</h1>
+  <p class="sub">Type a prompt and press Generate.</p>
+  <textarea id="prompt" placeholder="Write a short product description for a reusable water bottle" maxlength="4000"></textarea>
+  <button id="go">Generate</button>
+  <div id="out" role="status" aria-live="polite"></div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+$('go').onclick = async () => {
+  const prompt = $('prompt').value.trim();
+  if (!prompt) { $('prompt').focus(); return; }
+  const btn = $('go'), out = $('out');
+  btn.disabled = true; btn.textContent = 'Generating…';
+  out.className = ''; out.textContent = '';
+  try {
+    const r = await fetch('/api/generate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({prompt})
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Request failed');
+    out.textContent = data.text;
+  } catch (e) {
+    out.className = 'error';
+    out.textContent = 'Could not generate a response: ' + e.message;
+  } finally {
+    btn.disabled = false; btn.textContent = 'Generate';
+  }
+};
+</script>
+</body>
+</html>
